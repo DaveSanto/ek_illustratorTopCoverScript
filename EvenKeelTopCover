@@ -1,0 +1,413 @@
+if (!app.homeScreenVisible) {
+    app.activeDocument.close(SaveOptions.DONOTSAVECHANGES); // PROMPTTOSAVECHANGES
+}
+
+app.userInteractionLevel = UserInteractionLevel.DONTDISPLAYALERTS;
+
+// 'FirstName_LastName_ShoeType_MaterialType_Size_Date_LxShift_yShift_LeftAangle_RightxShift_RightYShift_rightAngle'
+
+//EXAMPLES post file names to parse: note 10 _ and 11 items parsed (as of June 2 2022)
+
+
+//Samantha_Delaney_Sneaker_E60_Medium_07.11.2022_Lx3.25_y9.35_A90_Rx2.75_y9.35_A90
+//First[0]_Last[1]_Shoe[2]_Material[3]_Size[4]_Date[5]_LeftX[6]_LeftY[7]_LeftAngle[8]_RightX[9]_RightY[10]_RightAngle[11]_ProviderCode[12]
+var stringToParse =  prompt('filename please'); // 'David_Santopietro_Running_E60_small_5/16/2022_Lx3.539_y10.521_A91_Left';
+
+var splitArray = stringToParse.split('_');
+
+var patientFirstName = splitArray[0];
+var patientLastName = splitArray[1];
+var patientFullName = patientFirstName + " " + patientLastName;
+var patientPracticeDoctorOrCollege = prompt('Header Line (optional): ex. College, Practice Or Doctor');
+var patientPracticePhoneOrSport =  prompt('Subheader? (optional): ex. Sport, Doctor, Phone#');
+var date = splitArray[5];
+var insoleSize = splitArray[4].toLowerCase();
+var providerCode = splitArray[]
+var shoe = splitArray[3];
+
+var arbXLeft = parseFloat(splitArray[6].slice(2, )) * 72;
+var arbYLeft = parseFloat(splitArray[7].slice(1, )) * 72;
+var arbXRight = parseFloat(splitArray[9].slice(2, )) * 72;
+var arbYRight = parseFloat(splitArray[10].slice(1, )) * 72;
+
+var layoutAngleRight = splitArray[11].slice(1, );
+var layoutAngleLeft = splitArray[8].slice(1, );
+
+//alert('insole size is: ' + insoleSize);
+
+switch (insoleSize) {
+    case "small":
+        var moveX = 0.0736 * 72; // -0.6739 * 72; // 0.75 * 72;
+        var moveY = 2.1667 * 72; // 0.6717 * 72; // 1.5 * 72;
+        var rescale = 77.0;
+        break;
+    case "medium":
+        var moveX = 0.0256 * 72; // -0.2344 * 72; // 0.25 * 72;
+        var moveY = 0.7536 * 72; // 0.2336 * 72; // 0.5 * 72;
+        var rescale = 92.0;
+        break;
+    case "large":
+        var moveX = 0;
+        var moveY = 0;
+        var rescale = 100.0;
+        break;
+    case "xlarge":
+        var moveX = -0.0256 * 72; // 0.2344 * 72; // -0.25 * 72;
+        var moveY = -0.7536 * 72; // -0.2336 * 72; // -0.5 * 72;
+        var rescale = 108.0;
+        break;
+}
+
+switch (providerCode) {
+    case "00" :
+   var providerName = "Olga Kaltsou, PT";
+        var providerNum = "(617) 787-0030";
+        var backgroundLayer = "Holistic PT Pilates 2"
+        var textColor = "1E4397"
+        break;
+    case "01":
+        var providerName = "Michael Sganaga, DPM";
+        var providerNum = "(617) 787-0030";
+        break;
+    case "02": 
+        var providerName = "Mark Rose, DPM";
+        var providerNum = "(617) 787-0030";
+        break;
+
+}
+
+//MARK: FILE LOCATION INFORMATION:
+//master file name:
+//EvenKeelTopCover_May2022.ai
+
+var os = $.os.toLowerCase().indexOf('mac') >= 0 ? "MAC": "WINDOWS";
+
+//alert(os);
+
+if (os == "WINDOWS") {
+// windows google drive location 
+var doc = app.open(File("G:/My Drive/EvenKeelTopCovers/EvenKeelTopCover.ai"));
+} else {
+// for mac and google drive location:
+var doc = app.open(File("/Users/davidsantopietro/Library/CloudStorage/GoogleDrive-info@evenkeelinsoles.com/My Drive/EvenKeelTopCovers/EvenKeelTopCover.ai"));
+}
+
+
+
+//END FILE LOCATION INFOMATION
+
+
+
+// // FOR Replacing/Updating code without messing with locations COPY FROM HERE to line  238 & 86
+
+var docRef = app.activeDocument;
+var docLayers = docRef.layers;
+
+var defaultLayer = "Large (13) Vars";
+var defaultLayerGotten = docLayers.getByName(defaultLayer);
+
+//Hide the OuterRectangleForPrint - (to hide set to true). Should the file start with it visible? Does that matter?
+var rectSizesLayer = "OuterRectangleForPrint";
+var rectrangleSizeLayerGotten = docLayers.getByName(rectSizesLayer);
+hideLayer(rectrangleSizeLayerGotten, false);
+
+//Show the rectangle layer... set to false to show
+rectrangleSizeLayerGotten.pageItems[insoleSize].hidden = false;
+
+// input patient info
+//inputPatientInfo(defaultLayerGotten, patientFullName, patientStreetAddress, patientCity, date);
+inputPatientInfo(defaultLayerGotten, patientFullName, date, patientPracticeDoctorOrCollege, patientPracticePhoneOrSport);
+
+groupItems(defaultLayerGotten);
+
+var manipGroup = defaultLayerGotten.groupItems[0];
+var aboutItem = manipGroup.pageItems['Rotate/Scale_Square'];
+
+var bounds = calculate_bounds([aboutItem]);
+var center = [(bounds[0]+bounds[2])/2, (bounds[1]+bounds[3])/2];
+
+// // resize about the center of groupItems
+resizeLayer(manipGroup, rescale, Transformation.CENTER);
+
+// do other non left/right specific actions
+
+// hide original, copy it into new layer, and hide 'right'
+
+// hide yellow lines and box...set to true to hide
+defaultLayerGotten.pageItems[0].pageItems['Rotate/Scale_Square'].hidden = true;
+defaultLayerGotten.pageItems[0].pageItems['YellowVertLine_HideBeforeExport&Print'].hidden = true;
+defaultLayerGotten.pageItems[0].pageItems['YellowHorzLine_HideBeforeExport&Print'].hidden = true;
+
+hideLayer(defaultLayerGotten, true);
+
+// name insole
+insoleName = patientFirstName + patientLastName + "_" + insoleSize;
+
+duplicateLayer(defaultLayer, insoleName, "LEFT");
+
+// do left specific actions:
+
+var leftLayerSelected = docLayers.getByName(insoleName + "_LEFT");
+var leftManipGroup = leftLayerSelected.groupItems[0];
+
+// item to rotate around
+var leftRotateAboutItem = leftManipGroup.pageItems['Rotate/Scale_Square'];
+
+var leftBounds = calculate_bounds([leftRotateAboutItem]);
+var leftCenter = [(leftBounds[0]+leftBounds[2])/2, (leftBounds[1]+leftBounds[3])/2];
+
+rotate_around_global_pos(leftManipGroup, layoutAngleLeft, leftCenter);
+
+// left move
+moveLayer(leftLayerSelected, moveX + arbXLeft, moveY + arbYLeft);
+
+// create clipping mask
+createClippingMask(leftLayerSelected, os);
+
+// send rectSizesLayer to front
+hideLayer(rectrangleSizeLayerGotten, false);
+rectrangleSizeLayerGotten.zOrder(ZOrderMethod.BRINGTOFRONT);
+
+//Show the rectangle layer... set to false to show
+rectrangleSizeLayerGotten.pageItems[insoleSize].hidden = false;
+
+// hideLayer(rectrangleSizeLayerGotten, true);
+
+// save left file
+// leftFileDest = "C:\\Users\\erick\\coding\\evenkeel\\illustrator\\evenkeel_illustrator\\pdfs\\" + insoleName + "_LEFT.pdf";
+// saveFileToPDF(leftFileDest);
+
+// copy original into new layer and hide 'left'
+duplicateLayer(defaultLayer, insoleName, "RIGHT");
+hideLayer(leftLayerSelected, true);
+
+// do right specific actions:
+
+var rightLayerSelected = docLayers.getByName(insoleName + "_RIGHT");
+var rightManipGroup = rightLayerSelected.groupItems[0];
+
+// item to rotate around
+var rightRotateAboutItem = rightManipGroup.pageItems['Rotate/Scale_Square'];
+
+var rightBounds = calculate_bounds([rightRotateAboutItem]);
+var rightCenter = [(rightBounds[0]+rightBounds[2])/2, (rightBounds[1]+rightBounds[3])/2];
+
+rotate_around_global_pos(rightManipGroup, layoutAngleRight, rightCenter);
+
+// right move
+moveLayer(rightLayerSelected, moveX + arbXRight, moveY + arbYRight);
+
+// // create clipping mask
+createClippingMask(rightLayerSelected, os);
+
+// send rectSizesLayer to front
+// hideLayer(rectrangleSizeLayerGotten, false);
+// rectrangleSizeLayerGotten.zOrder(ZOrderMethod.BRINGTOFRONT);
+
+// save right file
+// rightFileDest = "C:\\Users\\erick\\coding\\evenkeel\\illustrator\\evenkeel_illustrator\\pdfs\\" + insoleName + "_RIGHT.pdf";
+// saveFileToPDF(rightFileDest);
+
+
+
+
+// MARK: BEGIN FUNCTIONS SECTION
+
+function createClippingMask(toBeClipped, opSys) {
+    // app.selection = null;
+    app.activeDocument.activeLayer = toBeClipped;
+    toBeClipped.hasSelectedArtwork = true;
+
+    var actionStr = "/version 3\
+    /name [ 8\
+        4576656e6b65656c\
+    ]\
+    /isOpen 1\
+    /actionCount 1\
+    /action-1 {\
+        /name [ 18\
+            4d616b6520436c697070696e67204d61736b\
+        ]\
+        /keyIndex 0\
+        /colorIndex 5\
+        /isOpen 1\
+        /eventCount 1\
+        /event-1 {\
+            /useRulersIn1stQuadrant 0\
+            /internalName (adobe_makeMask)\
+            /localizedName [ 18\
+                4d616b6520436c697070696e67204d61736b\
+            ]\
+            /isOpen 0\
+            /isOn 1\
+            /hasDialog 0\
+            /parameterCount 0\
+        }\
+    }";
+
+//ACTION LOCATIONS
+
+    //PC using Goo  gle location:
+    if (opSys == "WINDOWS") {
+        // windows location
+        var actionFileLocation = "G:/My Drive/EvenKeelTopCovers/temp.aia";
+    } else {
+        // mac location:
+        var actionFileLocation = "/Users/davidsantopietro/Library/CloudStorage/GoogleDrive-info@evenkeelinsoles.com/My Drive/EvenKeelTopCovers/temp.aia";
+    }
+    
+
+    var f = File(actionFileLocation);
+    f.open('w');
+    f.write(actionStr);
+    f.close();
+
+    app.loadAction(f); //actionFileLocation);
+    app.doScript("Make Clipping Mask", "Evenkeel");
+    // app.doScript("Make Cliiping Mask", "1")
+    // app.doScript("Make Clipping Mask")
+    f.remove();
+    app.unloadAction("Evenkeel", "");
+}
+
+
+   
+
+
+function calculate_bounds(sel){
+    var minX = Number.POSITIVE_INFINITY;
+    var maxX = Number.NEGATIVE_INFINITY;
+    var minY = Number.POSITIVE_INFINITY;
+    var maxY = Number.NEGATIVE_INFINITY;
+
+
+    for (i = 0; i < sel.length; i++){
+        var item = sel[i];
+        var bounds = sel[i].controlBounds;
+
+        minX = Math.min( minX, bounds[0], bounds[2] );
+        maxX = Math.max( maxX, bounds[0], bounds[2] );
+        minY = Math.min( minY, bounds[1], bounds[3] );
+        maxY = Math.max( maxY, bounds[1], bounds[3] );
+    }
+    return [maxX, maxY, minX, minY];
+}
+
+function scale_around_global_pos() {}
+
+function rotate_around_global_pos(obj, ang, pos) {
+    // positive ang rotates counterclockwise
+    var rot = app.getRotationMatrix(ang);
+    var mov = app.getTranslationMatrix(pos[0], pos[1]);
+    var inv = app.invertMatrix(mov);
+    var mtx = app.concatenateMatrix(inv, rot);
+    var mtx = concatenateMatrix(mtx, mov);
+
+    obj.transform(mtx, 1, 1, 1, 1, 1, Transformation.DOCUMENTORIGIN); // Transformation.DOCUMENTORIGIN
+}
+
+function rotateLayerAboutItem(toBeRotated, angle, rotateAbout) {
+    // var rotateAboutItem = toBeRotated.groupItems[0].pageItems['Rotate/Scale_Square'];
+    toBeRotated.rotate(
+        angle,
+        true,
+        true,
+        true,
+        true,
+        rotateAbout
+    );
+}
+
+function groupItems(toBeGrouped) {
+    app.activeDocument.activeLayer = toBeGrouped;
+    app.activeDocument.activeLayer.hasSelectedArtwork = true;
+    // group layer items
+    app.executeMenuCommand("group");
+}
+
+function resizeLayer(toBeResized, scale, scaleAbout) {
+    // scale group to size accordingly
+    // var resizeAboutItem = toBeResized.groupItems[0].pageItems['Rotate/Scale_Square'];
+    toBeResized.resize(
+        scale,
+        scale,
+        true,
+        true,
+        true,
+        true,
+        scale,
+        scaleAbout
+    );
+}
+
+function saveFileToPDF(dest) {
+  var doc = app.activeDocument;
+
+  var saveName = new File(dest);
+  saveOpts = new PDFSaveOptions();
+
+  saveOpts.compatibility = PDFCompatibility.ACROBAT5;
+  saveOpts.preserveEditability = true;
+  
+  doc.saveAs(saveName, saveOpts);
+}
+
+function hideLayer(toBeHidden, trueOrFalse) {
+    // layerToBeHidden = docLayers.getByName(toBeHidden);
+    toBeHidden.visible = !trueOrFalse;
+}
+
+
+function duplicateLayer(toBeCopied, nameOfInsole, rightOrLeft) {
+    newLayer = docLayers.add();
+    newLayer.zOrderPosition = docLayers.length-1;
+    newLayer.name = nameOfInsole + "_" + rightOrLeft;
+    layerToBeCopied = docLayers.getByName(toBeCopied);
+
+    for (var i = layerToBeCopied.pageItems.length-1; i >= 0; i--) {
+        layerToBeCopied.pageItems[i].duplicate(newLayer, ElementPlacement.PLACEATBEGINNING);
+    }
+
+    if (rightOrLeft == "RIGHT") {
+        // hide left patent
+        newLayer.pageItems[0].pageItems['ARTWORK_Group'].pageItems['AllText'].pageItems['SidesAndPatentNums'].pageItems['LeftGroup'].hidden = true;
+    }
+    else {
+        // hide right patent
+        newLayer.pageItems[0].pageItems['ARTWORK_Group'].pageItems['AllText'].pageItems['SidesAndPatentNums'].pageItems['RightGroup'].hidden = true;
+        // newLayer.pageItems[0].page...
+    }
+}
+
+function inputPatientInfo(layer, fullName, date, PracticeOrCollege, PhoneOrSport) {
+    patientInfoItems = layer.pageItems['ARTWORK_Group'].pageItems['AllText'].pageItems;
+
+    // call city and street topline and middle line? change var names? material used?
+   
+    patientInfoItems[0].contents = fullName;
+    patientInfoItems[1].contents = date;
+    patientInfoItems[2].contents = PracticeOrCollege;
+    patientInfoItems[3].contents = PhoneOrSport;
+}
+
+// change layertomove var name
+
+// xshift = sizeX + arbitraryXLeft
+// if Medium, sizeX = 0.25
+// xshift = .25 + 2.7 = 2.95
+
+
+function moveLayer(layerToMove, xShift, yShift) {
+    for (var i = layerToMove.pageItems.length-1; i >= 0; i--) {
+        layerToMove.pageItems[i].translate(xShift, -yShift);
+    }
+}
+
+// resizeLayer() probably doesn't work on an individual item basis.
+// must select the whole layer and rescale
+
+// function resizeLayer(layerToResize, scale) {
+//     for (var i = layerToResize.pageItems.length-1; i >= 0; i--) {
+//         layerToResize.pageItems[i].resize(scale, scale);
+//     }
+// }    
